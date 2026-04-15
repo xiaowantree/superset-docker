@@ -6,6 +6,26 @@
 
 ---
 
+## 为什么做这个镜像
+
+官方的 Apache Superset 想跑起来、再连上 Trino，其实并不轻松：
+
+- **要 clone 整个 Superset 源码仓库**，再 `docker-compose up`，十几个容器（Redis、Postgres、Worker、Beat、Node 等）一起拉，首次启动好几分钟，网络稍差就各种 timeout
+- Superset **官方镜像默认不带 Trino 驱动**，得自己改 Dockerfile、`pip install sqlalchemy-trino`，然后重新 build —— 不熟 Docker 的人很容易卡在这里
+- 连接 URI 格式、CSRF、SECRET_KEY、metadata 数据库初始化……**一堆环境变量和配置坑**，官方文档又散落在不同页面
+- 最后还得**自己手工把仪表盘 yaml 打包成 zip** 才能 import，稍有结构错就报 "Invalid metadata.yaml"
+
+**这个镜像把这些都解决了：**
+
+✅ 基于 `apache/superset:3.1.3` 固定版本，**预装 `sqlalchemy-trino` + `trino` 客户端**，Trino 连接开箱即用
+✅ 单容器，**一条 `docker run` 起服务**，不需要 docker-compose、不需要额外的 Redis / Postgres
+✅ `SECRET_KEY`、metadata DB、admin 账号、gunicorn 启动参数**全部配好**，环境变量可以覆盖
+✅ **股票仪表盘 zip 打包在镜像里**（`/app/dashboard_export.zip`），UI 一键 Import 即可，不用自己 clone 主项目再找文件
+
+所以用户只要：有一个能访问的 Trino、能跑 Docker，**3 分钟内**就能看到仪表盘。
+
+---
+
 ## 一行启动
 
 ```bash
