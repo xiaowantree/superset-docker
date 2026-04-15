@@ -1,6 +1,6 @@
 # Stock DE Superset 镜像
 
-预装 **Trino SQLAlchemy 驱动** 和 **股票仪表盘 zip** 的 Apache Superset Docker 镜像。
+预装 **Trino SQLAlchemy 驱动** 的 Apache Superset Docker 镜像。
 
 不用 clone Superset 源码，不用 docker-compose，一行命令启动。
 
