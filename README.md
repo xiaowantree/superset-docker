@@ -13,16 +13,13 @@
 - **要 clone 整个 Superset 源码仓库**，再 `docker-compose up`，十几个容器（Redis、Postgres、Worker、Beat、Node 等）一起拉，首次启动好几分钟，网络稍差就各种 timeout
 - Superset **官方镜像默认不带 Trino 驱动**，得自己改 Dockerfile、`pip install sqlalchemy-trino`，然后重新 build —— 不熟 Docker 的人很容易卡在这里
 - 连接 URI 格式、CSRF、SECRET_KEY、metadata 数据库初始化……**一堆环境变量和配置坑**，官方文档又散落在不同页面
-- 最后还得**自己手工把仪表盘 yaml 打包成 zip** 才能 import，稍有结构错就报 "Invalid metadata.yaml"
-
 **这个镜像把这些都解决了：**
 
 ✅ 基于 `apache/superset:3.1.3` 固定版本，**预装 `sqlalchemy-trino` + `trino` 客户端**，Trino 连接开箱即用
 ✅ 单容器，**一条 `docker run` 起服务**，不需要 docker-compose、不需要额外的 Redis / Postgres
 ✅ `SECRET_KEY`、metadata DB、admin 账号、gunicorn 启动参数**全部配好**，环境变量可以覆盖
-✅ **股票仪表盘 zip 打包在镜像里**（`/app/dashboard_export.zip`），UI 一键 Import 即可，不用自己 clone 主项目再找文件
 
-所以用户只要：有一个能访问的 Trino、能跑 Docker，**3 分钟内**就能看到仪表盘。
+所以用户只要：有一个能访问的 Trino、能跑 Docker，一条命令就能起 Superset。
 
 ---
 
@@ -33,38 +30,6 @@ docker run -d --name superset -p 8088:8088 vikiwu/stock-de-superset:latest
 ```
 
 打开 <http://localhost:8088>，用 `admin / admin` 登录。
-
----
-
-## 首次配置（两步）
-
-### 1. 添加 Trino 数据库连接
-
-Settings → Database Connections → **+ DATABASE** → 选 **Trino**，SQLAlchemy URI 填：
-
-```
-trino://admin@<你的-trino-主机>:8080/s3data/default
-```
-
-有密码就用：
-
-```
-trino://<用户>:<密码>@<主机>:<端口>/<catalog>/<schema>
-```
-
-点 **Test Connection** → 绿勾 → Save。
-
-### 2. 导入股票仪表盘
-
-Settings → **Import Dashboards** → Choose File → 选 `dashboard_export.zip` → Import。
-
-zip 文件就打包在镜像里，用下面命令拿到本地：
-
-```bash
-docker cp superset:/app/dashboard_export.zip ./
-```
-
-导入时如果问 database 密码，就填你 Trino 的密码。
 
 ---
 
